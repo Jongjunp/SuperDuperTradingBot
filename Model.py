@@ -3,33 +3,34 @@ import tensorflow.keras as keras
 import tensorflow_probability as tfp
 
 
-class Critic(keras.Model):
-    def __init__(self):
-        super(Critic, self).__init__()
+class PPOModel:
+    def __init__(self, action_size, state_size):
+        self.action_size = action_size
+        self.state_size = state_size
 
-        kernel_initializer = keras.initializers.VarianceScaling(scale=2.0)
+        self.critic = self.make_critic()
+        self.actor = self.make_actor()
 
-        self.hidden_1 = keras.layers.Dense(
-            units=64,
-            activation=keras.activations.selu,
-            kernel_initializer=kernel_initializer
-        )
-        self.hidden_2 = keras.layers.Dense(
-            units=64,
-            activation=keras.activations.selu,
-            kernel_initializer=kernel_initializer
-        )
-        self.dense_value = keras.layers.Dense(
-            units=1,
-            activation=None,
-            kernel_initializer=kernel_initializer
-        )
+        self.critic.summary()
+        self.actor.summary()
 
-    def call(self, inputs, training=False, masks=False):
-        inputs = keras.utils.normalize(inputs, order=2)
+    def make_critic(self):
+        inputs = keras.Input(shape=self.state_size, name="Stock_data")
+        layer = keras.layers.Flatten(name="Flatten")(inputs)
+        layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
+        layer = keras.layers.Dense(300, activation='selu', name="Dense_2")(layer)
+        outputs = keras.layers.Dense(1, activation=None, name="Value")(layer)
 
-        hidden = self.hidden_1(inputs)
-        hidden = self.hidden_2(hidden)
-        value = self.dense_value(hidden)
+        model = keras.Model(inputs=inputs, outputs=outputs, name="Critic")
+        return model
 
-        return value[..., 0]
+    def make_actor(self):
+        inputs = keras.Input(shape=self.state_size, name="Data")
+        layer = keras.layers.Flatten(name="Flatten")(inputs)
+        layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
+        layer = keras.layers.Dense(300, activation='selu', name="Dense_2")(layer)
+        outputs = keras.layers.Dense(self.action_size, activation='softmax', name="Policy")(layer)
+
+        model = keras.Model(inputs=inputs, outputs=outputs, name="Actor")
+        return model
+
