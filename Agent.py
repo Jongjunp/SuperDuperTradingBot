@@ -9,7 +9,7 @@ from Model import PPOModel
 
 
 class Agent:
-    def __init__(self, state_size, action_size):
+    def __init__(self):
         # Parameters
         self.lr = .0005
         self.discount = .95
@@ -24,10 +24,13 @@ class Agent:
 
         self.data = []
 
-        self.model = PPOModel(self.action_size, self.state_size)
+        self.model = PPOModel(self.action_size, self.state_size, self.lr)
 
-    def predict_policy(self):
-        return self.model.actor.predict()
+    def value(self, state):
+        return self.model.critic.predict(state)
+
+    def q_value(self, state):
+        return self.model.actor.predict(state)
 
     def put_data(self, transition):
         self.data.append(transition)
@@ -55,4 +58,20 @@ class Agent:
 
     def train(self):
         s, a, r, sp, done, pr_a = self.make_batch()
+
+        for i in range(self.K_epoch):
+            td_target = tf.add(r, tf.multiply(self.discount, self.value(sp)) * done)
+            delta = td_target - self.value(s)
+            delta = delta.detach().numpy()
+
+            advantage_list = []
+            advantage = .0
+
+            for delta_t in delta[::-1]:
+                advantage = self.discount * self.lmbda * advantage + delta_t[0]
+                advantage_list.append([advantage])
+            advantage_list.reverse()
+            advantage = tf.Variable(advantage_list, dtype=tf.float16)
+
+
 

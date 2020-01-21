@@ -4,9 +4,10 @@ import tensorflow_probability as tfp
 
 
 class PPOModel:
-    def __init__(self, action_size, state_size):
+    def __init__(self, action_size, state_size, lr):
         self.action_size = action_size
         self.state_size = state_size
+        self.lr = lr
 
         self.critic = self.make_critic()
         self.actor = self.make_actor()
@@ -22,6 +23,7 @@ class PPOModel:
         outputs = keras.layers.Dense(1, activation=None, name="Value")(layer)
 
         model = keras.Model(inputs=inputs, outputs=outputs, name="Critic")
+        model.compile(optimizer=keras.optimizers.Adam(lr=self.lr), loss='mse')
         return model
 
     def make_actor(self):
@@ -32,5 +34,6 @@ class PPOModel:
         outputs = keras.layers.Dense(self.action_size, activation='softmax', name="Policy")(layer)
 
         model = keras.Model(inputs=inputs, outputs=outputs, name="Actor")
+        model.compile(optimizer=keras.optimizers.Adam(lr=self.lr), loss='mse')
         return model
 
