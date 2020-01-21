@@ -1,12 +1,7 @@
 import tensorflow as tf
-import tensorflow.keras as keras
-import tensorflow_probability as tfp
-import numpy as np
-import pydot
 
-from tensorflow.keras.utils import plot_model
-from Model import PPOModel
-from Parameter import *
+from reinforcement.Model import PPOModel
+from reinforcement.Parameter import *
 
 
 class Agent:

@@ -1,7 +1,6 @@
 import tensorflow as tf
 import tensorflow.keras as keras
-import tensorflow_probability as tfp
-from Parameter import *
+from reinforcement.Parameter import *
 
 
 class PPOModel:

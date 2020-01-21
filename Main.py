@@ -1,4 +1,4 @@
-from Agent import Agent
+from reinforcement.Agent import Agent
 import tensorflow as tf
 
 if __name__ == "__main__":
