@@ -29,8 +29,9 @@ google_news_contents_sub = soup_google_news.select('h4 > a')
 
 soup_yeonhab_news = BeautifulSoup(html_yeonhab_news,'html.parser')
 yeonhab_news_contents = soup_yeonhab_news.select('div.news-con > h1 > a')
-yeonhab_news_contents.append(soup_yeonhab_news.select(''))
-yeonhab_news_contents.append(soup_yeonhab_news.select(''))
+yeonhab_news_contents = yeonhab_news_contents + soup_yeonhab_news.select('div.news-con > h2 > a')
+yeonhab_news_contents = yeonhab_news_contents + soup_yeonhab_news.select('div > h2 > a')
+
 for main_content in google_news_contents_main:
     print(main_content.text)
 for sub_content in google_news_contents_sub:
@@ -51,4 +52,7 @@ for content in yeonhab_news_contents:
 #content > div.column-wrap > div.col-cont.column-headline > div.column-area01 > div > ul > li:nth-child(1) > div.news-con > h2 > a
 #content > div.column-wrap > div.column-wide > div > div > div > div.news-con > h1 > a
 #content > div.column-wrap > div.col-cont.column-headline > div.column-area02 > div.contents-box.list-type19.factcheck-zone > div > ul > li:nth-child(1) > a
+#content > div.column-wrap > div.col-cont.column-headline > div.column-area01 > div > ul > li:nth-child(9) > div.news-con > h2 > a
+#content > div.column-wrap > div.col-cont.column-headline > div.column-area02 > div.contents-box.list-type19.factcheck-zone > div > ul > li:nth-child(1) > a > div.news-con > h4
+#content > div.column-wrap > div.col-cont.column-misc > div.column-area01 > div.flex-wrap > div.section-flex01 > div > div > div.headlines.major-news02 > ul > li:nth-child(1) > div > h2 > a
 
