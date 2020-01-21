@@ -4,10 +4,11 @@ import tensorflow_probability as tfp
 
 
 class PPOModel:
-    def __init__(self, action_size, state_size, lr):
+    def __init__(self, action_size, state_size, lr, noise):
         self.action_size = action_size
         self.state_size = state_size
         self.lr = lr
+        self.noise = noise
 
         self.critic = self.make_critic()
         self.actor = self.make_actor()
@@ -36,4 +37,13 @@ class PPOModel:
         model = keras.Model(inputs=inputs, outputs=outputs, name="Actor")
         model.compile(optimizer=keras.optimizers.Adam(lr=self.lr), loss='mse')
         return model
+
+    @staticmethod
+    def proximal_policy_optimization_loss(advantage, old_pred):
+        def loss(true, pred):
+            prob = keras.backend.sum(true * pred, axis=-1)
+            old_prob = keras.backend.sum(true * old_pred, axis=-1)
+            ratio = prob/(old_prob + 1e-10)
+
+            return
 

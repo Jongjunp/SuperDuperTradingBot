@@ -17,6 +17,7 @@ class Agent:
         self.eps_clip = .1
         self.K_epoch = 3
         self.T_horizon = 20
+        self.noise = 1
 
         # action, state size
         self.action_size = 3
@@ -24,7 +25,7 @@ class Agent:
 
         self.data = []
 
-        self.model = PPOModel(self.action_size, self.state_size, self.lr)
+        self.model = PPOModel(self.action_size, self.state_size, self.lr, self.noise)
 
     def value(self, state):
         return self.model.critic.predict(state)
@@ -73,5 +74,12 @@ class Agent:
             advantage_list.reverse()
             advantage = tf.Variable(advantage_list, dtype=tf.float16)
 
+            policy = self.q_value(s)
+            policy_a = policy.gather(1, a)
+            ratio = tf.math.exp(tf.math.log(policy_a) - tf.math.log(pr_a))
+
+            surr1 = ratio * advantage
+            surr2 = tf.clip_by_value(ratio, 1-self.eps_clip, 1+self.eps_clip) * advantage
+            loss = -tf.math.minimum(surr1, surr2)
 
 
