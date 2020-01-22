@@ -28,4 +28,5 @@ Proximal Policy Optimization 알고리즘은 강화학습의 최신 알고리즘
 selenium과 BeautifulSoup를 이용한 web crawler를 구현하여 페이지에서 내가 원하는 텍스트 정보 획득에 성공하였다.
 이를 이용해 아주 적절한 전처리 모듈을 짜야하고 CNN 모델을 만들어야 한다. 예제 모델을 https://ratsgo.github.io/natural%20language%20processing/2017/03/19/CNN/ 에서 참조하여 첨부하였다.
 
-
+### 조승근
+강화학습 알고리즘 짜는 중에 있다. \\(ㅇㅁㅇ)/
