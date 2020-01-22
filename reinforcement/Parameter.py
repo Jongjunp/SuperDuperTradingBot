@@ -11,7 +11,7 @@ ENTROPY_LOSS  = 5e-3
 
 # Reinforcement Size
 ACTION_SIZE   = 3
-STATE_SIZE    = (5, 60, )
+STATE_SIZE    = (61, 5, )
 BATCH_SIZE    = 30
 BUFFER_SIZE   = 240
 EPISODE       = 1825        # 5년

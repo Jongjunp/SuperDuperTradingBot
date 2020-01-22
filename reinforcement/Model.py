@@ -30,6 +30,7 @@ class PPOModel:
 
         model = keras.Model(inputs=inputs, outputs=outputs, name="Critic")
         model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE), loss='mse')
+        model.summary()
         return model
 
     # Actor(Q) 모델 생성 함수
@@ -37,7 +38,7 @@ class PPOModel:
     def make_actor():
         inputs = keras.Input(shape=STATE_SIZE, name="Data")
         advantage = keras.Input(shape=(1, ))
-        old_prediction = keras.Input(shape=ACTION_SIZE)
+        old_prediction = keras.Input(shape=(ACTION_SIZE,))
         layer = keras.layers.Flatten(name="Flatten")(inputs)
 
         layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
@@ -48,6 +49,7 @@ class PPOModel:
         model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE),
                       loss=PPOModel.proximal_policy_optimization_loss(advantage, old_prediction))
 
+        model.summary()
         return model
 
     # PPO의 Loss 함수
@@ -65,7 +67,7 @@ class PPOModel:
 
     # 모델로부터 행동 선택
     def get_action(self, observation):
-        p = self.actor.predict([observation, DUMMY_VALUE, DUMMY_ACTION])
+        p = self.actor.predict([observation.reshape(1, 61, 5), DUMMY_VALUE, DUMMY_ACTION])
         if self.val is False:
             action = np.random.choice(ACTION_SIZE, p=np.nan_to_num(p[0]))
         else:
