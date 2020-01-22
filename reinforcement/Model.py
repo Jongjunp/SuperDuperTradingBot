@@ -5,13 +5,23 @@ from reinforcement.Parameter import *
 
 class PPOModel:
     def __init__(self):
+        # validating
+        self.val = False
+
         self.critic = self.make_critic()
         self.actor = self.make_actor()
 
         self.critic.summary()
         self.actor.summary()
 
-    def make_critic(self):
+    @staticmethod
+    # 지수 이동 평균 식.
+    def exponential_average(old, new, b1):
+        return old * b1 + (1 - b1) * new
+
+    # Critic(v) 모델 생성 함수
+    @staticmethod
+    def make_critic():
         inputs = keras.Input(shape=STATE_SIZE, name="Stock_data")
         layer = keras.layers.Flatten(name="Flatten")(inputs)
         layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
@@ -22,17 +32,25 @@ class PPOModel:
         model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE), loss='mse')
         return model
 
-    def make_actor(self):
+    # Actor(Q) 모델 생성 함수
+    @staticmethod
+    def make_actor():
         inputs = keras.Input(shape=STATE_SIZE, name="Data")
+        advantage = keras.Input(shape=(1, ))
+        old_prediction = keras.Input(shape=ACTION_SIZE)
         layer = keras.layers.Flatten(name="Flatten")(inputs)
+
         layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
         layer = keras.layers.Dense(300, activation='selu', name="Dense_2")(layer)
         outputs = keras.layers.Dense(ACTION_SIZE, activation='softmax', name="Policy")(layer)
 
-        model = keras.Model(inputs=inputs, outputs=outputs, name="Actor")
-        model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE), loss='mse')
+        model = keras.Model(inputs=[inputs, advantage, old_prediction], outputs=[outputs], name="Actor")
+        model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE),
+                      loss=PPOModel.proximal_policy_optimization_loss(advantage, old_prediction))
+
         return model
 
+    # PPO의 Loss 함수
     @staticmethod
     def proximal_policy_optimization_loss(advantage, old_pred):
         def loss(true, pred):
@@ -40,7 +58,22 @@ class PPOModel:
             old_prob = keras.backend.sum(true * old_pred, axis=-1)
             r = prob/(old_prob + 1e-10)
 
-            return -tf.math.reduce_mean(
-                tf.math.minimum(r * advantage, tf.clip_by_value(r, 1-LOSS_CLIPPING, 1+LOSS_CLIPPING)))
+            tmp = tf.clip_by_value(r, 1-EPS, 1+EPS) * advantage + ENTROPY_LOSS * -(prob * tf.math.log(prob + 1e-10))
+            return keras.backend.mean(keras.backend.minimum(r * advantage, tmp))
+
+        return loss
+
+    # 모델로부터 행동 선택
+    def get_action(self, observation):
+        p = self.actor.predict([observation, DUMMY_VALUE, DUMMY_ACTION])
+        if self.val is False:
+            action = np.random.choice(ACTION_SIZE, p=np.nan_to_num(p[0]))
+        else:
+            action = np.argmax(p[0])
+
+        action_matrix = np.zeros(ACTION_SIZE)
+        action_matrix[action] = 1
+
+        return action, action_matrix, p
 
 

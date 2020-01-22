@@ -8,13 +8,7 @@ class Agent:
     def __init__(self):
         self.data = []
 
-        self.model = PPOModel(ACTION_SIZE, STATE_SIZE, LEARNING_RATE, NOISE)
-
-    def value(self, state):
-        return self.model.critic.predict(state)
-
-    def q_value(self, state):
-        return self.model.actor.predict(state)
+        self.model = PPOModel()
 
     def put_data(self, transition):
         self.data.append(transition)
@@ -41,27 +35,6 @@ class Agent:
         return s, a, r, sp, done, pr_a
 
     def train(self):
-        s, a, r, sp, done, pr_a = self.make_batch()
-
-        for i in range(self.K_epoch):
-            td_target = tf.add(r, tf.multiply(self.discount, self.value(sp)) * done)
-            delta = td_target - self.value(s)
-            delta = delta.detach().numpy()
-
-            advantage_list = []
-            advantage = .0
-
-            for delta_t in delta[::-1]:
-                advantage = self.discount * self.lmbda * advantage + delta_t[0]
-                advantage_list.append([advantage])
-            advantage_list.reverse()
-            advantage = tf.Variable(advantage_list, dtype=tf.float16)
-
-            policy = self.q_value(s)
-            policy_a = policy.gather(1, a)
-            ratio = tf.math.exp(tf.math.log(policy_a) - tf.math.log(pr_a))
-
-            surr1 = ratio * advantage
-            surr2 = tf.clip_by_value(ratio, 1-self.eps_clip, 1+self.eps_clip) * advantage
+        pass
 
 
