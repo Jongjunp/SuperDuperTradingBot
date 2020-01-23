@@ -24,12 +24,12 @@ class PPOModel:
     def make_critic():
         inputs = keras.Input(shape=STATE_SIZE, name="Stock_data")
         layer = keras.layers.Flatten(name="Flatten")(inputs)
-        layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
-        layer = keras.layers.Dense(300, activation='selu', name="Dense_2")(layer)
+        layer = keras.layers.Dense(800, activation='tanh', name="Dense_1")(layer)
+        layer = keras.layers.Dense(800, activation='tanh', name="Dense_2")(layer)
         outputs = keras.layers.Dense(1, activation=None, name="Value")(layer)
 
         model = keras.Model(inputs=inputs, outputs=outputs, name="Critic")
-        model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE), loss='mse')
+        model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE), loss='mse', experimental_run_tf_function=False)
         model.summary()
         return model
 
@@ -41,13 +41,15 @@ class PPOModel:
         old_prediction = keras.Input(shape=(ACTION_SIZE,))
         layer = keras.layers.Flatten(name="Flatten")(inputs)
 
-        layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
-        layer = keras.layers.Dense(300, activation='selu', name="Dense_2")(layer)
-        outputs = keras.layers.Dense(ACTION_SIZE, activation='softmax', name="Policy")(layer)
+        layer = keras.layers.Dense(800, activation='selu', name="Dense_1")(layer)
+        layer = keras.layers.Dense(800, activation='selu', name="Dense_2")(layer)
+        outputs = keras.layers.Dense(ACTION_SIZE, activation='softmax', name="Policy",
+                                     kernel_initializer=keras.initializers.VarianceScaling(scale=2.0))(layer)
 
         model = keras.Model(inputs=[inputs, advantage, old_prediction], outputs=[outputs], name="Actor")
         model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE),
-                      loss=PPOModel.proximal_policy_optimization_loss(advantage, old_prediction))
+                      loss=PPOModel.proximal_policy_optimization_loss(advantage, old_prediction),
+                      experimental_run_tf_function=False)
 
         model.summary()
         return model
@@ -60,14 +62,15 @@ class PPOModel:
             old_prob = keras.backend.sum(true * old_pred, axis=-1)
             r = prob/(old_prob + 1e-10)
 
-            tmp = tf.clip_by_value(r, 1-EPS, 1+EPS) * advantage + ENTROPY_LOSS * -(prob * tf.math.log(prob + 1e-10))
-            return keras.backend.mean(keras.backend.minimum(r * advantage, tmp))
+            tmp = keras.backend.minimum(r*advantage, keras.backend.clip(r, min_value=1-EPS, max_value=1+EPS) * advantage)
+            return -keras.backend.mean(tmp + ENTROPY_LOSS * -(prob * keras.backend.log(prob + 1e-10)))
 
         return loss
 
     # 모델로부터 행동 선택
     def get_action(self, observation):
-        p = self.actor.predict([observation.reshape(1, 61, 5), DUMMY_VALUE, DUMMY_ACTION])
+        p = self.actor.predict([observation.reshape(1, 31, 5), DUMMY_VALUE, DUMMY_ACTION])
+        print(p)
         if self.val is False:
             action = np.random.choice(ACTION_SIZE, p=np.nan_to_num(p[0]))
         else:

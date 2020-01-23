@@ -1,5 +1,7 @@
 import tensorflow as tf
 import tensorboard
+import matplotlib.pyplot as plt
+import random
 
 from reinforcement.Model import PPOModel
 from reinforcement.Parameter import *
@@ -21,7 +23,7 @@ class Agent:
         tmp_batch = [[], [], []]
         while len(batch[0]) < BUFFER_SIZE:
             action, action_matrix, pred_action = self.model.get_action(self.observation)
-
+            print(pred_action)
             observation, reward, done = self.env.next_step(action)
             self.reward.append(reward)
 
@@ -32,8 +34,18 @@ class Agent:
 
             if done:
                 self.transform_reward()
+
+                for i in range(len(tmp_batch[0])):
+                    obs, action, pred = tmp_batch[0][i], tmp_batch[1][i], tmp_batch[2][i]
+                    r = self.reward[i]
+                    batch[0].append(obs)
+                    batch[1].append(action)
+                    batch[2].append(pred)
+                    batch[3].append(r)
                 self.env.reset()
 
+                for i in range(4):
+                    random.shuffle(batch[i])
         obs, action, pred, reward = np.array(batch[0]), np.array(batch[1]), np.array(
             batch[2]), np.reshape(np.array(batch[3]), (len(batch[3]), 1))
 
@@ -41,8 +53,11 @@ class Agent:
         return obs, action, pred, reward
 
     def transform_reward(self):
-        if self.val is True:
-            pass
+        for j in range(len(self.reward)):
+            reward = self.reward[j]
+            for k in range(j+1, len(self.reward)):
+                reward += self.reward[k] * DISCOUNT ** k
+            self.reward[j] = reward
 
     # GAE 이용 Advantage 계산
     def calculate_advantage(self):
@@ -62,4 +77,14 @@ class Agent:
                                               batch_size=BATCH_SIZE, shuffle=True, epochs=K_EPOCH)
             critic_loss = self.model.critic.fit([obs], [reward], batch_size=BATCH_SIZE, shuffle=True, epochs=K_EPOCH)
 
+        x1 = range(2164)
+        x2 = range(2164)
+
+        y1 = self.env.balance_history
+        y2 = self.env.value_history
+
+        plt.plot(list(x1), y1, label="balance")
+        plt.plot(list(x2), y2, label="value")
+        plt.legend()
+        plt.show()
         return
