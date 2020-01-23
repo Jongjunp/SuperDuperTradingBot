@@ -48,11 +48,7 @@ class Scrab:
         a = 0
 
         for count, line in enumerate(reader):
-            a += 1
-            if a == 10:
-                break
-
-            print(f"{count}/231 {line[1]}\t|", end='')
+            print(f"{count}/2310 {line[1]}\t|", end='')
             price_data = self.scrab(line[0], line[1])
 
             inner_count = 0

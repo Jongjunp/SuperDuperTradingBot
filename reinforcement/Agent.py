@@ -23,7 +23,6 @@ class Agent:
         tmp_batch = [[], [], []]
         while len(batch[0]) < BUFFER_SIZE:
             action, action_matrix, pred_action = self.model.get_action(self.observation)
-            print(pred_action)
             observation, reward, done = self.env.next_step(action)
             self.reward.append(reward)
 
@@ -59,7 +58,7 @@ class Agent:
                 reward += self.reward[k] * DISCOUNT ** k
             self.reward[j] = reward
 
-    # GAE 이용 Advantage 계산
+# GAE 이용 Advantage 계산
     def calculate_advantage(self):
         pass
 

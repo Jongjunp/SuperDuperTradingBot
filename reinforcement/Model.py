@@ -61,16 +61,16 @@ class PPOModel:
             prob = keras.backend.sum(true * pred, axis=-1)
             old_prob = keras.backend.sum(true * old_pred, axis=-1)
             r = prob/(old_prob + 1e-10)
+            print(r)
 
-            tmp = keras.backend.minimum(r*advantage, keras.backend.clip(r, min_value=1-EPS, max_value=1+EPS) * advantage)
-            return -keras.backend.mean(tmp + ENTROPY_LOSS * -(prob * keras.backend.log(prob + 1e-10)))
+            tmp = keras.backend.mean(keras.backend.minimum(r * advantage, keras.backend.clip(r, 1-EPS, 1+EPS) * advantage))
+            return -keras.backend.log(prob + 1e-10) * tmp
 
         return loss
 
     # 모델로부터 행동 선택
     def get_action(self, observation):
         p = self.actor.predict([observation.reshape(1, 31, 5), DUMMY_VALUE, DUMMY_ACTION])
-        print(p)
         if self.val is False:
             action = np.random.choice(ACTION_SIZE, p=np.nan_to_num(p[0]))
         else:

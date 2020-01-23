@@ -19,7 +19,4 @@ if __name__ == "__main__":
 
     elif ans is "3":
         a = Env()
-        a.load_data()
-        print(a.make_data())
-
 
