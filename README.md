@@ -29,4 +29,4 @@ selenium과 BeautifulSoup를 이용한 web crawler를 구현하여 페이지에�
 이를 이용해 아주 적절한 전처리 모듈을 짜야하고 CNN 모델을 만들어야 한다. 예제 모델을 https://ratsgo.github.io/natural%20language%20processing/2017/03/19/CNN/ 에서 참조하여 첨부하였다.
 
 ### 조승근
-강화학습 알고리즘 짜는 중에 있다. \\(ㅇㅁㅇ)/
+강화학습 알고리즘은 성공적으로 돌아간다. 2020년 1월 22일 저녁 Agent에서 보인 한 행동에 수렴하는 현상은 Training set이 제한되어 있는 상태로 학습을 계속 진행시켰기 때문이다. 따라서, 시장 전체로 Training을 확대한다. 삼성전자를 Validating Set으로 지정한다.
