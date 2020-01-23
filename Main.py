@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     elif ans is "2":
         a = Agent()
-        a.train()
+        a.run()
 
     elif ans is "3":
         a = Env()

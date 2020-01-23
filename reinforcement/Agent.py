@@ -13,8 +13,8 @@ class Agent:
         self.model = PPOModel()     # 모델
         self.env = Env()            # 환경
         self.reward = []            # 이익
-        self.observation = self.env.reset()
         self.val = False            # Validating
+        self.transition = []        # Buffer Data
 
     # 배치 생성 함수
     def get_batch(self):
@@ -87,3 +87,77 @@ class Agent:
         plt.legend()
         plt.show()
         return
+
+##########################################
+    # 배치 만드는 함수
+    def make_batch(self):
+        # s, a, r, s', pr(a), done 리스트 생성
+        s_lst, a_lst, r_lst, s_prime_lst, prob_a_lst, done_lst = [], [], [], [], [], []
+
+        # Buffer 리스트 안에 있는 데이터에 대하여 리스트 추가
+        for item in self.transition:
+            s, a, r, s_prime, prob_a, done = item
+
+            s_lst.append(s)
+            a_lst.append(a)
+            r_lst.append(r)
+            s_prime_lst.append(s_prime)
+            prob_a_lst.append(prob_a)
+            done_lst.append(done)
+
+        # numpy array 로 변환후 반환
+        return np.array(s_lst), np.array(a_lst).reshape(-1, 3), \
+               np.array(r_lst), np.array(s_prime_lst), np.array(done_lst), np.array(prob_a_lst).reshape(-1, 3)
+
+    def new_train(self):
+        # 배치 데이터 받아오기
+        s, a, r, s_prime, done, prob_a = self.make_batch()
+
+        td_target = r + DISCOUNT * self.model.critic.predict(s_prime) * done
+        delta = td_target - self.model.critic.predict(s)
+
+        advantage_lst = []
+        advantage = .0
+
+        for delta_t in delta[::-1]:
+            advantage = DISCOUNT * LMBDA * advantage + delta_t[0]
+            advantage_lst.append([advantage])
+
+        advantage_lst.reverse()
+        advantage = np.array(advantage_lst)
+        actor_loss = self.model.actor.fit([s, advantage, prob_a], [a], verbose=False,
+                                          batch_size=BATCH_SIZE, shuffle=True, epochs=K_EPOCH)
+        critic_loss = self.model.critic.fit([s], [r], batch_size=BATCH_SIZE, shuffle=True, epochs=K_EPOCH, verbose=False)
+
+    def run(self):
+        score = .0
+        print_interval = 20
+
+        # Episode 만큼 돌림
+        for episode in range(EPISODE):
+            # 환경 초기화
+            print("Episode Reset")
+            s = self.env.reset()
+            done = False
+
+            # 에피소드가 끝나기 전까지
+            while not done:
+                # 학습 데이터 수집
+                for t in range(T_HORIZON):
+                    # Actor로 부터 행동 추측 후 다음 스텝
+                    action, action_matrix, predict_action = self.model.get_action(s)
+                    s_prime, r, done = self.env.next_step(action)
+
+                    # Buffer 리스트에 추가
+                    self.transition.append((s, action_matrix, r, s_prime, predict_action, done))
+                    if len(self.transition) > BUFFER_SIZE:
+                        self.transition.pop(0)
+                    s = s_prime
+
+                    score += r
+                    if done:
+                        break
+
+                print("Score: ", score)
+                print(self.env.pred_account, self.env.stock, self.env.stock_value, sep='\t')
+                self.new_train()
