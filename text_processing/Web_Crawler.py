@@ -1,58 +1,71 @@
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import pysqlite3
+import csv
+import pandas as pd
 
-#driver = webdriver 객체
-driver_google_news = webdriver.Chrome('/Users/J.J.Park/Desktop/KAIST/KAIST 2학년 겨울학기/Project_SuperDuperTradingBot/chromedriver.exe')
-driver_yeonhab_news = webdriver.Chrome('/Users/J.J.Park/Desktop/KAIST/KAIST 2학년 겨울학기/Project_SuperDuperTradingBot/chromedriver.exe')
-#driver_sbs_news = webdriver.Chrome('/Users/J.J.Park/Desktop/KAIST/KAIST 2학년 겨울학기/Project_SuperDuperTradingBot/chromedriver.exe')
+#html variables
+Economics_html  = 'https://kr.investing.com/news/'
+General_html = 'https://www.yna.co.kr/news'
+My_webdriver_loc = '/Users/J.J.Park/Desktop/KAIST/KAIST 2학년 겨울학기/Project_SuperDuperTradingBot/chromedriver.exe'
+My_parser = 'html.parser'
 
-#웹 자원 로드를 위해 기다리는 시간 설정 - 기본적으로는 다 로드 될 때까지 기다려줌
-driver_google_news.implicitly_wait(100)
-driver_yeonhab_news.implicitly_wait(100)
-#driver_sbs_news.implicitly_wait(100)
+class Crawler:
+    def __init__(self,page_address,webdriver_address,parser,category_tag,content_tag):
+        self.page_address = page_address
+        self.webdriver_address = webdriver_address
+        self.parser = parser
+        self.category_tag = category_tag
+        self.content_tag = content_tag
+        self.__waiting_time = 100
+        self.__categories = []
+        self.__category_content = {}
 
-#웹 연결
-driver_google_news.get('https://news.google.com/?hl=ko&gl=KR&ceid=KR%3Ako')
-driver_yeonhab_news.get('https://www.yna.co.kr/')
-#driver_sbs_news.get('https://news.sbs.co.kr/news/newsMain.do')
+    def GetCategory(self):
+        #My_driver = webdriver 객체
+        my_driver = webdriver.Chrome(self.webdriver_address)
 
-##목표 1. 눈에 보이는 모든 텍스트 순차적으로 crawling
+        #웹 자원 로드를 위해 기다리는 시간 설정 - 기본적으로는 다 로드될 때까지 기다려준다
+        my_driver.implicitly_wait(self.__waiting_time)
 
-html_google_news = driver_google_news.page_source
-html_yeonhab_news = driver_yeonhab_news.page_source
-#html_sbs_news = driver_sbs_news.page_source
+        #web connect
+        my_driver.get(self.page_address)
 
-soup_google_news = BeautifulSoup(html_google_news,'html.parser')
-google_news_contents_main = soup_google_news.select('article > h3 > a')
-google_news_contents_sub = soup_google_news.select('h4 > a')
+        #page source loading
+        page_source = my_driver.page_source
 
-soup_yeonhab_news = BeautifulSoup(html_yeonhab_news,'html.parser')
-yeonhab_news_contents = soup_yeonhab_news.select('div.news-con > h1 > a')
-yeonhab_news_contents = yeonhab_news_contents + soup_yeonhab_news.select('div.news-con > h2 > a')
-yeonhab_news_contents = yeonhab_news_contents + soup_yeonhab_news.select('div > h2 > a')
+        #making BeautifulSoup object
+        my_soup = BeautifulSoup(page_source,self.parser)
 
-for main_content in google_news_contents_main:
-    print(main_content.text)
-for sub_content in google_news_contents_sub:
-    print(sub_content.text)
-for content in yeonhab_news_contents:
-    print(content.text)
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div.NiLAwe.mi8Lec.gAl5If.sMVRZe.Oc0wGc.R7GTQ.keNKEd.j7vNaf.nID9nc > div > article > h3 > a
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div.NiLAwe.mi8Lec.gAl5If.sMVRZe.Oc0wGc.R7GTQ.keNKEd.j7vNaf.nID9nc > div > article > div.Da10Tb.Rai5ob > span
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div.NiLAwe.mi8Lec.gAl5If.sMVRZe.Oc0wGc.R7GTQ.keNKEd.j7vNaf.nID9nc > div > div.SbNwzf > article:nth-child(1) > h4 > a
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div.NiLAwe.mi8Lec.gAl5If.sMVRZe.Oc0wGc.R7GTQ.keNKEd.j7vNaf.nID9nc > div > div.SbNwzf > article:nth-child(2) > h4 > a
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div.NiLAwe.mi8Lec.gAl5If.sMVRZe.Oc0wGc.R7GTQ.keNKEd.j7vNaf.nID9nc > div > div.SbNwzf > article:nth-child(4) > h4 > a
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div:nth-child(3) > div > article > h3 > a
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div:nth-child(3) > div > div.SbNwzf > article:nth-child(2) > h4 > a
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div:nth-child(4) > div > article > h3 > a
-#yDmH0d > c-wiz > div > div.FVeGwb.CVnAc > div.ajwQHc.BL5WZb.RELBvb.zLBZs > div > main > c-wiz > div.lBwEZb.BL5WZb.xP6mwf > div.NiLAwe.mi8Lec.gAl5If.sMVRZe.Oc0wGc.R7GTQ.keNKEd.j7vNaf.nID9nc > div > div.SbNwzf > article:nth-child(4) > h4 > a
-#content > div.column-wrap > div.column-wide > div > div > div > div.img-con.img-cover.imgLiquid_bgSize.imgLiquid_ready > a > img
-#content > div.column-wrap > div.col-cont.column-headline > div.column-area01 > div > ul > li:nth-child(1) > div.img-con.img-cover.imgLiquid_bgSize.imgLiquid_ready > a > img
-#content > div.column-wrap > div.col-cont.column-headline > div.column-area01 > div > ul > li:nth-child(1) > div.news-con > h2 > a
-#content > div.column-wrap > div.column-wide > div > div > div > div.news-con > h1 > a
-#content > div.column-wrap > div.col-cont.column-headline > div.column-area02 > div.contents-box.list-type19.factcheck-zone > div > ul > li:nth-child(1) > a
-#content > div.column-wrap > div.col-cont.column-headline > div.column-area01 > div > ul > li:nth-child(9) > div.news-con > h2 > a
-#content > div.column-wrap > div.col-cont.column-headline > div.column-area02 > div.contents-box.list-type19.factcheck-zone > div > ul > li:nth-child(1) > a > div.news-con > h4
-#content > div.column-wrap > div.col-cont.column-misc > div.column-area01 > div.flex-wrap > div.section-flex01 > div > div > div.headlines.major-news02 > ul > li:nth-child(1) > div > h2 > a
+        #카테고리 추출
+        categories_source = my_soup.select(self.category_tag)
 
+        #카테고리를 저장, csv or .db file
+        for category_source in categories_source:
+            self.__categories.append(category_source.text)
+
+        return self.__categories
+
+    def GetContent(self):
+        # My_driver = webdriver 객체
+        my_driver = webdriver.Chrome(self.webdriver_address)
+
+        # 웹 자원 로드를 위해 기다리는 시간 설정 - 기본적으로는 다 로드될 때까지 기다려준다
+        my_driver.implicitly_wait(self.__waiting_time)
+
+        # web connect
+        my_driver.get(self.page_address)
+
+        #self.__categories에서 얻은 정보 이용
+        for category in self.__categories:
+            my_driver.find_element_by_link_text(category).click()
+            page_source = my_driver.page_source
+            my_soup = BeautifulSoup(page_source,self.parser)
+            contents_source = my_soup.select(self.content_tag)
+
+            #콘텐츠 저장, csv or .db file
+            for content_source in contents_source:
+                self.__category_content[self.__categories[category]] = content_source.text
+
+        return self.__category_content
