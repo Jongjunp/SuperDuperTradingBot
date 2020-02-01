@@ -2,14 +2,18 @@ import tensorflow as tf
 import tensorboard
 import matplotlib.pyplot as plt
 import random
+from PyQt5 import uic, QtCore
 
 from reinforcement.Model import PPOModel
 from reinforcement.Parameter import *
 from reinforcement.Environment import Env
 
 
-class Agent:
+class Agent(QtCore.QThread):
+
+
     def __init__(self):
+        super().__init__()
         self.model = PPOModel()     # 모델
         self.env = Env()            # 환경
         self.reward = []            # 이익
@@ -136,7 +140,6 @@ class Agent:
         # Episode 만큼 돌림
         for episode in range(EPISODE):
             # 환경 초기화
-            print("Episode Reset")
             s = self.env.reset()
             done = False
 
@@ -158,6 +161,4 @@ class Agent:
                     if done:
                         break
 
-                print("Score: ", score)
-                print(self.env.pred_account, self.env.stock, self.env.stock_value, sep='\t')
                 self.new_train()

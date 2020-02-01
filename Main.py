@@ -1,22 +1,29 @@
+import sys
+from PyQt5.QtWidgets import *
+from PyQt5 import uic
+import qdarkstyle
+
+from Design import MainWindow
+
 from reinforcement.Agent import Agent
-import tensorflow as tf
 from reinforcement.Scrab import Scrab
 from reinforcement.Environment import Env
 
+
+class System:
+    def __init__(self):
+        # GUI Interface
+        self.app = QApplication(sys.argv)
+        self.app.setStyleSheet(qdarkstyle.load_stylesheet())
+        self.main_window = MainWindow()
+        self.main_window.show()
+
+    # 로그 기록
+    def log(self, text):
+        self.main_window.log(text)
+        return
+
+
 if __name__ == "__main__":
-    print("1. 종목 스크랩\n"
-          "2. 모델 테스트\n")
-
-    ans = input()
-
-    if ans is "1":
-        tmp = Scrab()
-        tmp.scrab_all()
-
-    elif ans is "2":
-        a = Agent()
-        a.run()
-
-    elif ans is "3":
-        a = Env()
-
+    system = System()
+    sys.exit(system.app.exec())
