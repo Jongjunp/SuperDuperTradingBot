@@ -1,9 +1,7 @@
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
-import pysqlite3
-import csv
-import pandas as pd
+import sqlite3
 
 #html variables
 Economics_html  = 'https://kr.investing.com/news/'
@@ -19,10 +17,11 @@ class Crawler:
         self.category_tag = category_tag
         self.content_tag = content_tag
         self.__waiting_time = 100
-        self.__categories = []
-        self.__category_content = {}
+        self.connection = sqlite3.connect("data/stock.db")
 
     def GetCategory(self):
+        categories = []
+
         #My_driver = webdriver 객체
         my_driver = webdriver.Chrome(self.webdriver_address)
 
@@ -43,11 +42,19 @@ class Crawler:
 
         #카테고리를 저장, csv or .db file
         for category_source in categories_source:
-            self.__categories.append(category_source.text)
+            categories.append(category_source.text)
 
-        return self.__categories
+        return categories
 
     def GetContent(self):
+        #data base
+        cur = self.connection.cursor()
+
+        #db 테이블 만들기
+        cur.execute("CREATE TABLE NewsContents(category, content);")
+
+        categories = self.GetCategory()
+
         # My_driver = webdriver 객체
         my_driver = webdriver.Chrome(self.webdriver_address)
 
@@ -58,7 +65,7 @@ class Crawler:
         my_driver.get(self.page_address)
 
         #self.__categories에서 얻은 정보 이용
-        for category in self.__categories:
+        for category in categories:
             my_driver.find_element_by_link_text(category).click()
             page_source = my_driver.page_source
             my_soup = BeautifulSoup(page_source,self.parser)
@@ -66,6 +73,7 @@ class Crawler:
 
             #콘텐츠 저장, csv or .db file
             for content_source in contents_source:
-                self.__category_content[self.__categories[category]] = content_source.text
+                cur.execute('INSERT INTO NewsContents(?,?);', (category, content_source.text))
+                self.connection.commit()
 
-        return self.__category_content
+        return
