@@ -3,12 +3,6 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 import sqlite3
 
-#html variables
-Economics_html  = 'https://kr.investing.com/news/'
-General_html = 'https://www.yna.co.kr/news'
-My_webdriver_loc = '/Users/J.J.Park/Desktop/KAIST/KAIST 2학년 겨울학기/Project_SuperDuperTradingBot/chromedriver.exe'
-My_parser = 'html.parser'
-
 class Crawler:
     def __init__(self,page_address,webdriver_address,parser,category_tag,content_tag):
         self.page_address = page_address
@@ -17,7 +11,7 @@ class Crawler:
         self.category_tag = category_tag
         self.content_tag = content_tag
         self.__waiting_time = 100
-        self.connection = sqlite3.connect("data/stock.db")
+        self.connection = sqlite3.connect("./news.db")
 
     def GetCategory(self):
         categories = []
