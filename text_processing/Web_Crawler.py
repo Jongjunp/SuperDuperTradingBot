@@ -1,17 +1,16 @@
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 import sqlite3
 
 class Crawler:
-    def __init__(self,page_address,webdriver_address,parser,category_tag,content_tag,detail_content_tag,table_name):
+    def __init__(self,page_address,webdriver_address,parser,category_tag,content_tag):
         self.page_address = page_address
         self.webdriver_address = webdriver_address
         self.parser = parser
         self.category_tag = category_tag
         self.content_tag = content_tag
-        self.detail_content_tag = detail_content_tag
-        self.table_name = table_name
         self.__waiting_time = 100
         self.connection = sqlite3.connect("./news.db")
 
@@ -38,7 +37,7 @@ class Crawler:
 
         #카테고리를 저장, csv or .db file
         for category_source in categories_source:
-            categories.append(category_source.text.strip())
+            categories.append(category_source.text)
 
         return categories
 
@@ -47,7 +46,7 @@ class Crawler:
         cur = self.connection.cursor()
 
         #db 테이블 만들기
-        cur.execute("CREATE TABLE "+ self.table_name +" (category, content, content_detail);")
+        cur.execute("CREATE TABLE NewsContents(category, content);")
 
         categories = self.GetCategory()
 
@@ -62,24 +61,14 @@ class Crawler:
 
         #self.__categories에서 얻은 정보 이용
         for category in categories:
-            my_driver.find_element_by_link_text(category).click()
-            my_driver.implicitly_wait(self.__waiting_time)
+            my_driver.find_element_by_link_text(category).send_keys(Keys.ENTER)
             page_source = my_driver.page_source
             my_soup = BeautifulSoup(page_source,self.parser)
             contents_source = my_soup.select(self.content_tag)
 
-            #콘텐츠 저장 .db file
+            #콘텐츠 저장, csv or .db file
             for content_source in contents_source:
-                my_driver.find_element_by_link_text(content_source.text).click()
-                my_driver.implicitly_wait(self.__waiting_time)
-                article_page_source = my_driver.page_source
-                my_soup_for_article = BeautifulSoup(article_page_source,self.parser)
-                detail_contents_source = my_soup_for_article.select(self.detail_content_tag)
-
-                for detail_content_source in detail_contents_source:
-                    cur.execute("INSERT INTO " +self.table_name +" VALUES(?,?,?)", (category, content_source.text,detail_content_source.text))
-                    self.connection.commit()
-
-                my_driver.back()
+                cur.execute('INSERT INTO NewsContents(?,?);', (category, content_source.text))
+                self.connection.commit()
 
         return
