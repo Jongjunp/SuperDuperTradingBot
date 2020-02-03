@@ -60,7 +60,7 @@ class Crawler:
 
         #self.__categories에서 얻은 정보 이용
         for category in categories:
-            my_driver.find_element_by_link_text(category).click()
+            my_driver.find_element_by_link_text(category).send_keys(Keys.ENTER)
             page_source = my_driver.page_source
             my_soup = BeautifulSoup(page_source,self.parser)
             contents_source = my_soup.select(self.content_tag)
