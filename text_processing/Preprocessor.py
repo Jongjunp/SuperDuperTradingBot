@@ -40,7 +40,8 @@ class Preprocessor:
         tokenizer.fit_on_texts(preprocessed_data)
         preprocessed_data = tokenizer.texts_to_sequences(preprocessed_data)
 
-        max_len =
+        max_len = 1000
+        preprocessed_data = pad_sequences(preprocessed_data, maxlen=max_len)
 
 
 
