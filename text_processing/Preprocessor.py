@@ -1,6 +1,5 @@
 import sqlite3
 import pandas as pd
-import tensorflow
 from konlpy.tag import Okt
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -26,11 +25,12 @@ class Preprocessor:
         data_result['document'] = data_result['document'].str.replace("[^ㄱ-ㅎㅏ-ㅣ가-힣 ]","")
 
         #불용어 설정
-        stopwords = [#설정하기]
+        stopwords = []
 
         preprocessed_data = []
         for sentence in data_result:
             temp_sentence = []
+            okt = Okt()
             temp_sentence = okt.morphs(sentence, stem=True)
             temp_sentence = [word for word in temp_sentence if not word in stopwords]
             preprocessed_data.append(temp_sentence)
@@ -42,6 +42,8 @@ class Preprocessor:
 
         max_len = 1000
         preprocessed_data = pad_sequences(preprocessed_data, maxlen=max_len)
+
+        return preprocessed_data
 
 
 
