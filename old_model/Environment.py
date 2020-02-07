@@ -4,7 +4,7 @@ import tensorflow as tf
 import sqlite3
 import math
 
-from reinforcement.Parameter import *
+from old_model.Parameter import *
 
 
 class Env:
@@ -37,9 +37,11 @@ class Env:
         self.balance_history = []
         self.value_history = []
 
+        self.count = 0
+
     # 데이터 받아오기
     def load_data(self):
-        con = sqlite3.connect("data/stock.db")
+        con = sqlite3.connect("D:\SuperDuperTradingBot\data\stock.db")
         cursor = con.cursor()
         cursor.execute("SELECT * FROM price")
 
@@ -60,8 +62,8 @@ class Env:
         for element in lst:
             element = np.array(element, np.int)[:, 2:]
             self.trading_amount.append(np.max(element[:, 4:]))
-            element = tf.data.Dataset.from_tensor_slices(element).window(STATE, 1, 1, True)
-            dataset.append(iter(element.flat_map(lambda x: x.batch(STATE, True))))
+            element = tf.data.Dataset.from_tensor_slices(element).window(120, 1, 1, False)
+            dataset.append(iter(element.flat_map(lambda x: x.batch(120, False))))
 
         return dataset
 
@@ -138,7 +140,6 @@ class Env:
         # 1종목으로 테스트중
         self.stock = 0
         self.stock_value = 0
-        self.stock_count = 0
 
         # 현재 날짜
         self.date = 0
@@ -148,16 +149,23 @@ class Env:
     def make_data(self):
         def load_batch():
             try:
+                self.count += 1
+                print(self.count)
                 return next(self.dataset[self.stock_count]).numpy()
-            except StopIteration:
+            except:
+                print("hello")
                 self.stock_count += 1
-                self.reset()
-                return next(self.dataset[self.stock_count]).numpy()
+                return self.reset()
 
         self.batch = load_batch()
-        self.stock_value = self.batch[29, 0]
-        self.batch = np.hstack(((self.batch[:, :4] * np.full((30, 4), 1/np.max(self.batch[:, :3]))),
-                               self.batch[:, 4:] * np.full((30, 1), 1/self.trading_amount[self.stock_count])))
+        try:
+            self.stock_value = self.batch[119, 4]
+            self.batch = np.hstack(((self.batch[:, :4] * np.full((120, 4), 1 / np.max(self.batch[:, :3]))),
+                                    self.batch[:, 4:] * np.full((120, 1), 1 / self.trading_amount[self.stock_count])))
+
+        except Exception as e:
+            print(e)
 
         return np.vstack((self.batch,
-                          (self.balance/self.pred_account, self.stock*self.stock_value/self.pred_account, 0., 0., 0.)))
+                          (self.balance / self.pred_account, self.stock * self.stock_value / self.pred_account, 0., 0.,
+                           0.)))

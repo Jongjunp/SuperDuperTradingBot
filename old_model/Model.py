@@ -1,6 +1,6 @@
 import tensorflow as tf
 import tensorflow.keras as keras
-from reinforcement.Parameter import *
+from old_model.Parameter import *
 
 
 class PPOModel:
@@ -24,8 +24,8 @@ class PPOModel:
     def make_critic():
         inputs = keras.Input(shape=STATE_SIZE, name="Stock_data")
         layer = keras.layers.Flatten(name="Flatten")(inputs)
-        layer = keras.layers.Dense(300, activation='tanh', name="Dense_1")(layer)
-        layer = keras.layers.Dense(150, activation='tanh', name="Dense_2")(layer)
+        layer = keras.layers.Dense(100, activation='tanh', name="Dense_1")(layer)
+        layer = keras.layers.Dense(50, activation='tanh', name="Dense_2")(layer)
         outputs = keras.layers.Dense(1, activation=None, name="Value")(layer)
 
         model = keras.Model(inputs=inputs, outputs=outputs, name="Critic")
@@ -42,8 +42,8 @@ class PPOModel:
         old_prediction = keras.Input(shape=(ACTION_SIZE,))
         layer = keras.layers.Flatten(name="Flatten")(inputs)
 
-        layer = keras.layers.Dense(300, activation='selu', name="Dense_1")(layer)
-        layer = keras.layers.Dense(150, activation='selu', name="Dense_2")(layer)
+        layer = keras.layers.Dense(100, activation='selu', name="Dense_1")(layer)
+        layer = keras.layers.Dense(50, activation='selu', name="Dense_2")(layer)
         outputs = keras.layers.Dense(ACTION_SIZE, activation='softmax', name="Policy",
                                      kernel_initializer=keras.initializers.VarianceScaling(scale=2.0))(layer)
 

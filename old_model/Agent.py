@@ -4,13 +4,14 @@ import matplotlib.pyplot as plt
 import random
 from PyQt5 import uic, QtCore
 
-from reinforcement.Model import PPOModel
-from reinforcement.Parameter import *
-from reinforcement.Environment import Env
+from old_model.Model import PPOModel
+from old_model.Parameter import *
+from old_model.Environment import Env
 
 
 class Agent(QtCore.QThread):
-
+    done_interval = QtCore.pyqtSignal(list)
+    episode_start = QtCore.pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
@@ -55,44 +56,6 @@ class Agent(QtCore.QThread):
         pred = np.reshape(pred, (pred.shape[0], pred.shape[2]))
         return obs, action, pred, reward
 
-    def transform_reward(self):
-        for j in range(len(self.reward)):
-            reward = self.reward[j]
-            for k in range(j+1, len(self.reward)):
-                reward += self.reward[k] * DISCOUNT ** k
-            self.reward[j] = reward
-
-# GAE 이용 Advantage 계산
-    def calculate_advantage(self):
-        pass
-
-    # 모델 학습 함수
-    def train(self):
-        while self.env.episode < EPISODE:
-            obs, action, pred, reward = self.get_batch()
-            obs, action, pred, reward = obs[:BUFFER_SIZE], action[:BUFFER_SIZE], pred[:BUFFER_SIZE], reward[:BUFFER_SIZE]
-            old_prediction = pred
-            pred_values = self.model.critic.predict(obs)
-
-            advantage = reward - pred_values
-
-            actor_loss = self.model.actor.fit([obs, advantage, old_prediction], [action],
-                                              batch_size=BATCH_SIZE, shuffle=True, epochs=K_EPOCH)
-            critic_loss = self.model.critic.fit([obs], [reward], batch_size=BATCH_SIZE, shuffle=True, epochs=K_EPOCH)
-
-        x1 = range(2164)
-        x2 = range(2164)
-
-        y1 = self.env.balance_history
-        y2 = self.env.value_history
-
-        plt.plot(list(x1), y1, label="balance")
-        plt.plot(list(x2), y2, label="value")
-        plt.legend()
-        plt.show()
-        return
-
-##########################################
     # 배치 만드는 함수
     def make_batch(self):
         # s, a, r, s', pr(a), done 리스트 생성
@@ -113,7 +76,7 @@ class Agent(QtCore.QThread):
         return np.array(s_lst), np.array(a_lst).reshape(-1, 3), \
                np.array(r_lst), np.array(s_prime_lst), np.array(done_lst), np.array(prob_a_lst).reshape(-1, 3)
 
-    def new_train(self):
+    def train(self):
         # 배치 데이터 받아오기
         s, a, r, s_prime, done, prob_a = self.make_batch()
 
@@ -142,6 +105,7 @@ class Agent(QtCore.QThread):
             # 환경 초기화
             s = self.env.reset()
             done = False
+            self.episode_start.emit(episode+1)
 
             # 에피소드가 끝나기 전까지
             while not done:
@@ -161,4 +125,7 @@ class Agent(QtCore.QThread):
                     if done:
                         break
 
-                self.new_train()
+                env_data = [self.env.compute_balance, self.env.stock]
+                self.done_interval.emit(env_data)
+
+                self.train()
